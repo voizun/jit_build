@@ -25,8 +25,8 @@ jobs:
       - name: Build with Nuitka
         run: |
           cd JitStreamer
-          python3 -m nuitka --standalone --onefile --follow-imports JitStreamer/launch.py
-      - run: ls -alh JitStreamer/build/
+          python3 -m nuitka --standalone --follow-imports --static-libpython=yes --prefer-source-code JitStreamer/launch.py
+      - run: ls -alh JitStreamer/
       - name: Build Tailscale
         run: |
           git clone https://github.com/tailscale/tailscale
@@ -34,12 +34,12 @@ jobs:
           git checkout $(git describe --tags "$(git rev-list --tags --max-count=1)")
           go build -o tailscale.combined -tags ts_include_cli -ldflags="-s -w" -trimpath ./cmd/tailscaled
           strip tailscale.combined
-          mv tailscale.combined ../artifacts/
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          mv tailscale/tailscale.combined artifacts
           cd artifacts
-          tar cf - tailscale.combined *.bin | zstd -T0 -19 > bin.tar.zst
+          tar cf - * | zstd -T0 -19 > bin.tar.zst
           gh release create "build-$(date +'%Y%m%d%H%M%S')" bin.tar.zst \
             --title "Jit and Tail bin"
