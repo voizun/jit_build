@@ -22,7 +22,7 @@ jobs:
           pip3 install -U --break-system-packages pip setuptools nuitka git+https://github.com/jawshoeadan/JitStreamer#egg=JitStreamer
           git clone https://github.com/jawshoeadan/JitStreamer.git
           cd JitStreamer
-          python3 -m nuitka --standalone --onefile --follow-imports --include-package=socket --static-libpython=yes --no-prefer-source-code --output-filename=SideJITServer-linux-x86_64.bin JitStreamer/launch.py
+          python3 -m nuitka --standalone --onefile --output-filename=SideJITServer-linux-x86_64.bin JitStreamer/launch.py
       - name: Check if executable runs
         run: ./JitStreamer/SideJITServer-linux-x86_64.bin --version
       - name: Build Tailscale
