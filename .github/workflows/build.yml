@@ -40,6 +40,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          pwd
+          ls -alh
           mv tailscale/tailscale.combined artifacts
           mv JitStreamer/SideJITServer-linux-x86_64.bin artifacts
           gh release create "build-$(date +'%Y%m%d%H%M%S')" artifacts/* \
