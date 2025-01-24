@@ -10,7 +10,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: actions/checkout@v4
       - name: Update packages
         run: |
           mkdir artifacts
