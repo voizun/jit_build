@@ -16,17 +16,15 @@ jobs:
           echo "@testing http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
           apk update
           apk upgrade --no-cache
-          apk add --no-cache python3 python3-dev py3-pip gcc g++ curl git github-cli go binutils musl-dev linux-headers patchelf usbmuxd@testing
-      - name: Install pip packages
+          apk add --no-cache python3 python3-dev py3-pip gcc g++ curl git github-cli go binutils musl-dev linux-headers patchelf upx usbmuxd@testing
+      - name: Build JitStreamer
         run: |
-          pip3 install -U --break-system-packages pip nuitka git+https://github.com/jawshoeadan/JitStreamer#egg=JitStreamer
-      - name: Clone JitStreamer
-        run: git clone https://github.com/jawshoeadan/JitStreamer.git
-      - name: Build with Nuitka
-        run: |
+          pip3 install -U --break-system-packages pip setuptools nuitka git+https://github.com/jawshoeadan/JitStreamer#egg=JitStreamer
+          git clone https://github.com/jawshoeadan/JitStreamer.git
           cd JitStreamer
-          python3 -m nuitka --standalone --follow-imports --static-libpython=yes --prefer-source-code JitStreamer/launch.py
-      - run: ls -alh JitStreamer/
+          python3 -m nuitka --standalone --onefile --follow-imports --static-libpython=yes --prefer-source-code --output-filename=SideJITServer-linux-x86_64.bin JitStreamer/launch.py
+      - name: Check if executable runs
+        run: ./JitStreamer/SideJITServer-linux-x86_64.bin --version
       - name: Build Tailscale
         run: |
           git clone https://github.com/tailscale/tailscale
@@ -34,12 +32,15 @@ jobs:
           git checkout $(git describe --tags "$(git rev-list --tags --max-count=1)")
           go build -o tailscale.combined -tags ts_include_cli -ldflags="-s -w" -trimpath ./cmd/tailscaled
           strip tailscale.combined
+          upx --lzma --best tailscale.combined
+      - name: Check if executable runs
+        run: ./tailscale/tailscale.combined --version
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mv tailscale/tailscale.combined artifacts
+          mv JitStreamer/SideJITServer-linux-x86_64.bin artifacts
           cd artifacts
-          tar cf - * | zstd -T0 -19 > bin.tar.zst
-          gh release create "build-$(date +'%Y%m%d%H%M%S')" bin.tar.zst \
+          gh release create "build-$(date +'%Y%m%d%H%M%S')" * \
             --title "Jit and Tail bin"
