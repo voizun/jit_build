@@ -19,7 +19,7 @@ jobs:
           apk add --no-cache python3 python3-dev py3-pip gcc g++ curl git github-cli go binutils usbmuxd@testing
       - name: Install pip packages
         run: |
-          pip3 install -U pip nuitka git+https://github.com/jawshoeadan/JitStreamer#egg=JitStreamer
+          pip3 install -U --break-system-packages pip nuitka git+https://github.com/jawshoeadan/JitStreamer#egg=JitStreamer
       - name: Clone JitStreamer
         run: git clone https://github.com/jawshoeadan/JitStreamer.git
       - name: Build with Nuitka
