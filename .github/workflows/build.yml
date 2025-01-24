@@ -42,6 +42,5 @@ jobs:
         run: |
           mv tailscale/tailscale.combined artifacts
           mv JitStreamer/SideJITServer-linux-x86_64.bin artifacts
-          cd artifacts
-          gh release create "build-$(date +'%Y%m%d%H%M%S')" * \
+          gh release create "build-$(date +'%Y%m%d%H%M%S')" artifacts/* \
             --title "Jit and Tail bin"
