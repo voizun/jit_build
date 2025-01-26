@@ -17,32 +17,18 @@ jobs:
           echo "@testing http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
           apk update
           apk upgrade --no-cache
-          apk add --no-cache python3 python3-dev py3-pip gcc g++ curl git github-cli go binutils musl-dev linux-headers patchelf upx usbmuxd@testing
+          apk add --no-cache python3 python3-dev py3-pip gcc g++ curl git github-cli go binutils zstd usbmuxd@testing
       - name: Build JitStreamer
         run: |
-          pip3 install -U --break-system-packages pip setuptools nuitka git+https://github.com/jawshoeadan/JitStreamer#egg=JitStreamer
-          git clone https://github.com/jawshoeadan/JitStreamer.git
-          cd JitStreamer
-          python3 -m nuitka --standalone --onefile --output-filename=SideJITServer-linux-x86_64.bin JitStreamer/launch.py
-      - name: Check if executable runs
-        run: ./JitStreamer/SideJITServer-linux-x86_64.bin --version
-      - name: Build Tailscale
-        run: |
-          git clone https://github.com/tailscale/tailscale
-          cd tailscale
-          git checkout $(git describe --tags "$(git rev-list --tags --max-count=1)")
-          go build -o tailscale.combined -tags ts_include_cli -ldflags="-s -w" -trimpath ./cmd/tailscaled
-          strip tailscale.combined
-          upx --lzma --best tailscale.combined
-      - name: Check if executable runs
-        run: ./tailscale/tailscale.combined --version
+          python3 -m venv jitstreamer_env
+          . jitstreamer_env/bin/activate
+          pip3 install git+https://github.com/jawshoeadan/JitStreamer#egg=JitStreamer
+          tar cf - jitstreamer_env | zstd -T0 -19 > jitstreamer_env.tar.zst
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pwd
-          ls -alh
-          mv tailscale/tailscale.combined artifacts
-          mv JitStreamer/SideJITServer-linux-x86_64.bin artifacts
-          gh release create "build-$(date +'%Y%m%d%H%M%S')" artifacts/* \
+          git clone https://github.com/voizun/jit_build.git
+          cd jit_build
+          gh release create "build-$(date +'%Y%m%d%H%M%S')" ../jitstreamer_env.tar.zst \
             --title "Jit and Tail bin"
